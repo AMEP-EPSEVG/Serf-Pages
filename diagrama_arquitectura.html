@@ -350,7 +350,7 @@
       </div>
       <div class="box c-pres wide">
         <div class="box-title">Stimulus (Hotwire)</div>
-        <div class="box-sub">Controllers JS lleugersper a interaccions puntuals</div>
+        <div class="box-sub">Controllers JS lleugers per a interaccions puntuals</div>
         <span class="box-tag">JS mínim</span>
       </div>
       <div class="box c-pres">
@@ -410,17 +410,27 @@
       </div>
       <div class="box c-domain">
         <div class="box-title">Plat</div>
-        <div class="box-sub">belongs_to :menu<br>has_many :ingredients</div>
+        <div class="box-sub">belongs_to :menu<br>has_many :ingredients,<br>through: :plat_ingredients</div>
         <span class="box-tag">Model</span>
+      </div>
+      <div class="box c-domain">
+        <div class="box-title">PlatIngredient</div>
+        <div class="box-sub">belongs_to :plat<br>belongs_to :ingredient<br>imprescindible: boolean</div>
+        <span class="box-tag">Join Model</span>
       </div>
       <div class="box c-domain">
         <div class="box-title">Ingredient</div>
-        <div class="box-sub">imprescindible / substituïble<br>has_many :restriccions</div>
+        <div class="box-sub">has_many :plats,<br>through: :plat_ingredients<br>has_many :restriccions,<br>through: :ingredients_restriccions</div>
         <span class="box-tag">Model</span>
       </div>
       <div class="box c-domain">
+        <div class="box-title">IngredientsRestriccio</div>
+        <div class="box-sub">belongs_to :ingredient<br>belongs_to :restriccio</div>
+        <span class="box-tag">Join Model</span>
+      </div>
+      <div class="box c-domain">
         <div class="box-title">Restricció</div>
-        <div class="box-sub">Intoleràncies · Al·lèrgies<br>Preferències</div>
+        <div class="box-sub">Intoleràncies · Al·lèrgies<br>Preferències<br>has_many :ingredients,<br>through: :ingredients_restriccions</div>
         <span class="box-tag">Model</span>
       </div>
       <div class="box c-domain">
@@ -445,7 +455,7 @@
     <div class="layer-inner">
       <div class="box c-db wide">
         <div class="box-title">MySQL / MariaDB</div>
-        <div class="box-sub">Base de dades relacional<br>menus · plats · ingredients · restriccions · usuaris · plat_ingredients</div>
+        <div class="box-sub">Base de dades relacional<br>menus · plats · ingredients · restriccions · usuaris · plat_ingredients · ingredients_restriccions</div>
         <span class="box-tag">RDBMS</span>
       </div>
       <div class="box c-db wide">
