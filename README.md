@@ -2,7 +2,7 @@
 
 Repositori de pàgines públiques del projecte **SERF** per l'assignatura d'AMEP.
 
-El codi de l'aplicació es troba a [AMEP-EPSEVG/Serf-APP](https://github.com/AMEP-EPSEVG/Serf-APP). Aquest repositori conté exclusivament els fitxers publicats via **GitHub Pages**.
+El codi de l'aplicació es troba a [AMEP-EPSEVG/Serf-APP](https://github.com/AMEP-EPSEVG/Serf-APP). Aquest repositori conté exclusivament els fitxers publicats via [**GitHub Pages**](https://amep-epsevg.github.io/Serf-Pages/).
 
 ## Contingut actual
 
