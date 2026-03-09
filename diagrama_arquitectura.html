@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arquitectura — SERF</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --accent: #2f81f7;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 40px 32px 60px;
+  }
+
+  header {
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  header h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  header h1 span {
+    color: var(--accent);
+  }
+
+  header .meta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  .diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* LAYER */
+  .layer {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px 20px;
+    background: var(--surface);
+    transition: border-color .2s;
+  }
+  .layer:hover { border-color: #555; }
+
+  .layer-label {
+    position: absolute;
+    top: -11px;
+    left: 20px;
+    background: var(--bg);
+    padding: 0 10px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .layer-inner {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* CONNECTOR */
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    position: relative;
+  }
+  .connector::before, .connector::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(to bottom, transparent, var(--border), transparent);
+    margin: 0 auto;
+  }
+  .connector-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .connector-text {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: .06em;
+    white-space: nowrap;
+  }
+  .arrow { color: var(--muted); font-size: 0.8rem; }
+
+  /* BOXES */
+  .box {
+    border-radius: 8px;
+    padding: 12px 16px;
+    border: 1px solid;
+    cursor: default;
+    transition: transform .15s, box-shadow .15s;
+    flex-shrink: 0;
+  }
+  .box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .box-title {
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 3px;
+  }
+  .box-sub {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    opacity: .7;
+    line-height: 1.5;
+  }
+  .box-tag {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+
+  /* Client blue */
+  .c-client { background: rgba(47,129,247,.1); border-color: rgba(47,129,247,.4); }
+  .c-client .box-title { color: #79c0ff; }
+  .c-client .box-tag { background: rgba(47,129,247,.2); color: #79c0ff; }
+  .label-client { color: var(--accent); }
+
+  /* Presentation green */
+  .c-pres { background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.35); }
+  .c-pres .box-title { color: #7ee787; }
+  .c-pres .box-tag { background: rgba(63,185,80,.15); color: #7ee787; }
+  .label-pres { color: var(--accent2); }
+
+  /* Application purple */
+  .c-app { background: rgba(210,168,255,.08); border-color: rgba(210,168,255,.35); }
+  .c-app .box-title { color: #d2a8ff; }
+  .c-app .box-tag { background: rgba(210,168,255,.15); color: #d2a8ff; }
+  .label-app { color: var(--accent4); }
+
+  /* Domain orange */
+  .c-domain { background: rgba(255,166,87,.08); border-color: rgba(255,166,87,.35); }
+  .c-domain .box-title { color: #ffa657; }
+  .c-domain .box-tag { background: rgba(255,166,87,.15); color: #ffa657; }
+  .label-domain { color: var(--accent5); }
+
+  /* DB red */
+  .c-db { background: rgba(247,129,102,.08); border-color: rgba(247,129,102,.35); }
+  .c-db .box-title { color: #ff7b72; }
+  .c-db .box-tag { background: rgba(247,129,102,.15); color: #ff7b72; }
+  .label-db { color: var(--accent3); }
+
+  .sep {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+    margin: 0 4px;
+  }
+
+  .future {
+    border-style: dashed !important;
+    opacity: 0.65;
+  }
+  .future-badge {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    color: var(--muted);
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-left: 6px;
+    letter-spacing: .06em;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-line { width: 20px; height: 1px; border-top: 1px dashed var(--muted); }
+
+  /* Roles bar */
+  .roles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .role {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(47,129,247,.4);
+    background: rgba(47,129,247,.1);
+    color: #79c0ff;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .role-icon { font-size: 0.85rem; }
+
+  .wide { flex: 1; min-width: 160px; }
+  .full-w { width: 100%; }
+
+  /* Animate in */
+  .layer, .connector {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadein .4s forwards;
+  }
+  @keyframes fadein {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .layer:nth-child(1) { animation-delay: .05s; }
+  .connector:nth-child(2) { animation-delay: .12s; }
+  .layer:nth-child(3) { animation-delay: .18s; }
+  .connector:nth-child(4) { animation-delay: .25s; }
+  .layer:nth-child(5) { animation-delay: .32s; }
+  .connector:nth-child(6) { animation-delay: .38s; }
+  .layer:nth-child(7) { animation-delay: .44s; }
+  .connector:nth-child(8) { animation-delay: .50s; }
+  .layer:nth-child(9) { animation-delay: .56s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>SERF<br><span>Arquitectura del Sistema</span></h1>
+  </div>
+  <div class="meta">
+    Fase: Incepció<br>
+    Patró: MVC<br>
+    Versió: 0.1 · Març 2026
+  </div>
+</header>
+
+<div class="diagram">
+
+  <!-- CLIENT LAYER -->
+  <div class="layer">
+    <span class="layer-label label-client">▸ Capa Client</span>
+    <div class="layer-inner">
+      <div class="box c-client">
+        <div class="box-title">Navegador Web</div>
+        <div class="box-sub">Chrome · Firefox · Safari</div>
+        <span class="box-tag">HTML + CSS + JS</span>
+      </div>
+      <div class="sep"></div>
+      <div class="roles">
+        <span class="role"><span class="role-icon">🧑‍💼</span> Administrador</span>
+        <span class="role"><span class="role-icon">🧑‍🍳</span> Cuiner</span>
+        <span class="role"><span class="role-icon">🧑‍🍽️</span> Cambrer</span>
+      </div>
+      <div class="sep"></div>
+      <div class="box c-client future">
+        <div class="box-title">App Mòbil / PWA <span class="future-badge">futur</span></div>
+        <div class="box-sub">PDA · Dispositiu mòbil</div>
+        <span class="box-tag">Turbo Native</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTOR -->
+  <div class="connector">
+    <div class="connector-line">
+      <span class="arrow">↕</span>
+      <span class="connector-text">HTTP/S · Turbo Streams · Turbo Frames</span>
+    </div>
+  </div>
+
+  <!-- PRESENTATION LAYER -->
+  <div class="layer">
+    <span class="layer-label label-pres">▸ Capa Presentació</span>
+    <div class="layer-inner">
+      <div class="box c-pres wide">
+        <div class="box-title">Vistes Rails (ERB)</div>
+        <div class="box-sub">Plantilles HTML renderitzades al servidor</div>
+        <span class="box-tag">ActionView</span>
+      </div>
+      <div class="box c-pres wide">
+        <div class="box-title">Turbo (Hotwire)</div>
+        <div class="box-sub">Turbo Drive · Turbo Frames · Turbo Streams</div>
+        <span class="box-tag">SPA-like sense JS custom</span>
+      </div>
+      <div class="box c-pres wide">
+        <div class="box-title">Stimulus (Hotwire)</div>
+        <div class="box-sub">Controllers JS lleugersper a interaccions puntuals</div>
+        <span class="box-tag">JS mínim</span>
+      </div>
+      <div class="box c-pres">
+        <div class="box-title">CSS Framework</div>
+        <div class="box-sub">Bootstrap · Bulma · Tailwind</div>
+        <span class="box-tag">per avaluar</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTOR -->
+  <div class="connector">
+    <div class="connector-line">
+      <span class="arrow">↕</span>
+      <span class="connector-text">Router · Controllers · Rack Middleware</span>
+    </div>
+  </div>
+
+  <!-- APPLICATION LAYER -->
+  <div class="layer">
+    <span class="layer-label label-app">▸ Capa Aplicació (Controllers + Autenticació)</span>
+    <div class="layer-inner">
+      <div class="box c-app wide">
+        <div class="box-title">ActionController</div>
+        <div class="box-sub">Menús · Plats · Ingredients<br>Restriccions · Usuaris</div>
+        <span class="box-tag">RESTful CRUD</span>
+      </div>
+      <div class="box c-app wide">
+        <div class="box-title">Autenticació i Rols</div>
+        <div class="box-sub">Sessions · RBAC<br>Administrador · Cuiner · Cambrer</div>
+        <span class="box-tag">Devise / Rodauth</span>
+      </div>
+      <div class="box c-app wide">
+        <div class="box-title">Motor de Suggeriments</div>
+        <div class="box-sub">Filtratge de plats compatibles<br>Proposta d'alternatives</div>
+        <span class="box-tag">Service Object</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTOR -->
+  <div class="connector">
+    <div class="connector-line">
+      <span class="arrow">↕</span>
+      <span class="connector-text">ActiveRecord ORM</span>
+    </div>
+  </div>
+
+  <!-- DOMAIN LAYER -->
+  <div class="layer">
+    <span class="layer-label label-domain">▸ Capa Domini (Models)</span>
+    <div class="layer-inner">
+      <div class="box c-domain">
+        <div class="box-title">Menú</div>
+        <div class="box-sub">has_many :plats</div>
+        <span class="box-tag">Model</span>
+      </div>
+      <div class="box c-domain">
+        <div class="box-title">Plat</div>
+        <div class="box-sub">belongs_to :menu<br>has_many :ingredients</div>
+        <span class="box-tag">Model</span>
+      </div>
+      <div class="box c-domain">
+        <div class="box-title">Ingredient</div>
+        <div class="box-sub">imprescindible / substituïble<br>has_many :restriccions</div>
+        <span class="box-tag">Model</span>
+      </div>
+      <div class="box c-domain">
+        <div class="box-title">Restricció</div>
+        <div class="box-sub">Intoleràncies · Al·lèrgies<br>Preferències</div>
+        <span class="box-tag">Model</span>
+      </div>
+      <div class="box c-domain">
+        <div class="box-title">Usuari</div>
+        <div class="box-sub">rol: admin / cuiner / cambrer<br>Autenticació</div>
+        <span class="box-tag">Model</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTOR -->
+  <div class="connector">
+    <div class="connector-line">
+      <span class="arrow">↕</span>
+      <span class="connector-text">SQL · Claus foranes · Taules de join</span>
+    </div>
+  </div>
+
+  <!-- DB LAYER -->
+  <div class="layer">
+    <span class="layer-label label-db">▸ Capa Persistència</span>
+    <div class="layer-inner">
+      <div class="box c-db wide">
+        <div class="box-title">MySQL / MariaDB</div>
+        <div class="box-sub">Base de dades relacional<br>menus · plats · ingredients · restriccions · usuaris · plat_ingredients</div>
+        <span class="box-tag">RDBMS</span>
+      </div>
+      <div class="box c-db wide">
+        <div class="box-title">ActiveRecord Migrations</div>
+        <div class="box-sub">Gestió de l'esquema i versionat<br>de la base de dades</div>
+        <span class="box-tag">Schema versioning</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#79c0ff"></div> Capa Client</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7ee787"></div> Presentació (Views + Hotwire)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d2a8ff"></div> Aplicació (Controllers)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffa657"></div> Domini (Models)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff7b72"></div> Persistència (DB)</div>
+  <div class="legend-item"><div class="legend-line"></div> Component futur (fora PoC)</div>
+</div>
+
+</body>
+</html>
